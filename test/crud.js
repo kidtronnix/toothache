@@ -35,7 +35,8 @@ var internals = {
         },
         validationOpts: {
             abortEarly: false
-        }
+        },
+        db: db
     }
 };
 
@@ -50,17 +51,26 @@ var expect = Lab.expect;
 
 describe("MongoCrud", function() {
 
-	//var server = new Hapi.Server();
-	//var MongoCrud = require('../')(internals.CRUD);
+	var server = new Hapi.Server();
+	var MongoCrud = require('../')(internals.CRUD);
 	
 
 	before(function (done) {
-		// server.route({
-  //           method: 'GET', path: '/api/resource',
-  //           config: {
-  //               handler: MongoCrud.getAll
-  //           }
-  //       });
+        var MongoClient = require('mongodb').MongoClient
+        MongoClient.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
+            if(err) throw err;
+            internals.CRUD.db = db;
+            var MongoCrud = require('../')(internals.CRUD);
+            server.route({
+                method: 'GET', path: '/api/user',
+                config: {
+                    handler: MongoCrud.getAll
+                }
+            });
+            done();
+            
+        })
+		
 
   //       server.route({
   //           method: 'POST', path: '/api/resource',
@@ -92,40 +102,40 @@ describe("MongoCrud", function() {
         
     
 
-        done();
+        
         
     });
 
 
 
     it("lists all resources", function(done) {
+        // console.log(db)
+        // var collection = db
+        // .collection('users')
+        // .find({})
+        // .sort({ "_id" : 1})
+        // .toArray(function(err, docs) {
+        //     // if (err) throw err;
+        //     // next(docs).type('application/json');
+        //     expect(docs).to.be.instanceof(Array);
+        //     done();
+        // });
 
-        var collection = db
-        .collection('users')
-        .find({})
-        .sort({ "_id" : 1})
-        .toArray(function(err, docs) {
-            // if (err) throw err;
-            // next(docs).type('application/json');
-            expect(docs).to.be.instanceof(Array);
-            done();
-        });
-
-	   //  var options = {
-	   //      method: "GET",
-	   //      url: "/api/resource"
-	   //  };
+	    var options = {
+	        method: "GET",
+	        url: "/api/user"
+	    };
 
 	    
 	 
-	   //  server.inject(options, function(response) {
-	   //      var result = response.result;
-	 		// console.log(result)
-	   //      Lab.expect(response.statusCode).to.equal(200);
-	   //      // //Lab.expect(result).to.be.instanceof(Array);
-	   //      // // Lab.expect(result).to.have.length(5);
+	    server.inject(options, function(response) {
+	        var result = response.result;
+	 		console.log(result)
+	        Lab.expect(response.statusCode).to.equal(200);
+	        // //Lab.expect(result).to.be.instanceof(Array);
+	        // // Lab.expect(result).to.have.length(5);
 	 
-	   //      return done();
-	   //  });
+	        done();
+	    });
 	});
 });
