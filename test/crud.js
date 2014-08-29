@@ -6,8 +6,6 @@ var Lab = require("lab"),
 	ObjectId = require('mongodb').ObjectID,
     Bcrypt = require('bcryptjs');
 
-
-
 // Internal config stuff
 var internals = {
     // All config for mongo-crud
