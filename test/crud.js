@@ -3,17 +3,9 @@ var Lab = require("lab"),
 	Joi = require("joi"),
 	MongoDB = require('mongodb').Db,
 	Server = require('mongodb').Server,
-	ObjectId = require('mongodb').ObjectID;
+	ObjectId = require('mongodb').ObjectID,
+    Bcrypt = require('bcryptjs');
 
-var db = new MongoDB("hapi-dash", new Server("127.0.0.1", "27017", {auto_reconnect: true}), {w: 1});
-db.open(function(e, d) {
-    if (e) {
-        console.log(e);
-    } else{
-        console.log('connected to database :: hapi-dash');
-
-    }
-});
 
 
 // Internal config stuff
@@ -22,21 +14,20 @@ var internals = {
     CRUD: {
         bcrypt: 'password',
         create: Joi.object().keys({
-            email: Joi.string().required()
+            email: Joi.string().required(),
+            password: Joi.string().required()
         }),
         update: Joi.object().keys({
-            email: Joi.string()
+            email: Joi.string(),
+            password: Joi.string()
         }),
         defaults: {
             access: 'normal',
-            guiToken: false,
-            forgotToken: false,
             activated: false
         },
         validationOpts: {
             abortEarly: false
-        },
-        db: db
+        }
     }
 };
 
@@ -53,89 +44,178 @@ describe("MongoCrud", function() {
 
 	var server = new Hapi.Server();
 	var MongoCrud = require('../')(internals.CRUD);
-	
 
-	before(function (done) {
+    before(function (done) {
         var MongoClient = require('mongodb').MongoClient
         MongoClient.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
-            if(err) throw err;
+            expect(err).to.not.exist;
+
+            // Construct MongoCrud
             internals.CRUD.db = db;
             var MongoCrud = require('../')(internals.CRUD);
+
+            // Get All
             server.route({
-                method: 'GET', path: '/api/user',
+                method: 'GET', path: '/api/resource',
                 config: {
                     handler: MongoCrud.getAll
+                }
+            });
+
+            // Create
+            server.route({
+                method: 'POST', path: '/api/resource',
+                config: {
+                    handler: MongoCrud.create
+                }
+            });
+
+            // Get a resource
+            server.route({
+                method: 'GET', path: '/api/resource/{id}',
+                config: {
+                    handler: MongoCrud.get
+                }
+            });
+
+            // Update
+            server.route({
+                method: 'PUT', path: '/api/resource/{id}',
+                config: {
+                    handler: MongoCrud.update
+                }
+            });
+
+            // Delete
+            server.route({
+                method: 'DELETE', path: '/api/resource/{id}',
+                config: {
+                    handler: MongoCrud.del
                 }
             });
             done();
             
         })
-		
+    }); // Done with before
 
-  //       server.route({
-  //           method: 'POST', path: '/api/resource',
-  //           config: {
-  //               handler: MongoCrud.create
-  //           }
-  //       });
+    it("creates a resource", function(done) {
+        var payload = {
+            email: "test@test.com",
+            password: "newpass"
+        };
 
-  //       server.route({
-  //           method: 'GET', path: '/api/resource/{id}',
-  //           config: {
-  //               handler: MongoCrud.get
-  //           }
-  //       });
-
-  //       server.route({
-  //           method: 'PUT', path: '/api/resource/{id}',
-  //           config: {
-  //               handler: MongoCrud.update
-  //           }
-  //       });
-
-  //       server.route({
-  //           method: 'DELETE', path: '/api/resource/{id}',
-  //           config: {
-  //               handler: MongoCrud.del
-  //           }
-  //       });
-        
-    
+        var options = {
+            method: "POST",
+            url: "/api/resource",
+            payload: JSON.stringify(payload)
+        };
 
         
-        
+     
+        server.inject(options, function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(200);
+            expect(result).to.be.instanceof(Object);
+            expect(result.access).to.equal('normal');
+            expect(result.activated).to.equal(false);
+
+            // Test password was bcrypted correctly
+            var validPass = Bcrypt.compareSync(payload.password, result.password);
+            expect(validPass).to.equal(true);
+
+            done();
+        });
+    })
+
+    it("lists all resources", function(done) {
+        var options = {
+            method: "GET",
+            url: "/api/resource"
+        };
+
+        server.inject("/api/resource", function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(200);
+            expect(result).to.be.instanceof(Array);
+            // expect(result).to.have.length(1);
+
+            done();
+        });
+    });
+
+    it("get a resource", function(done) {
+        // Get all resources
+        server.inject("/api/resource", function(response) {
+            var result = response.result;
+            server.inject("/api/resource/"+result[0]._id, function(response) {
+                var result = response.result;
+                expect(response.statusCode).to.equal(200);
+                expect(result).to.be.instanceof(Object);
+                // expect(result).to.have.length(1);
+
+                done();
+            });
+        });
+    });
+
+    it("update a resource", function(done) {
+        // Get all resources
+        server.inject("/api/resource", function(response) {
+            var result = response.result;
+            var payload = {
+                email: "test2@test.com",
+                password: "newpass2"
+            };
+
+            var options = {
+                method: "PUT",
+                url: "/api/resource/"+result[0]._id,
+                payload: JSON.stringify(payload)
+            };
+            // Update resource
+            server.inject(options, function(response) {
+                var result = response.result;
+
+                expect(response.statusCode).to.equal(200);
+                expect(result).to.be.instanceof(Object);
+                expect(result.message).to.equal('Updated successfully');
+
+                // Get updated resource
+                server.inject(options.url, function(response) {
+                    var result = response.result;
+
+                    expect(result.email).to.equal(payload.email);
+                    
+                    // Test password was bcrypted correctly
+                    var validPass = Bcrypt.compareSync(payload.password, result.password);
+                    expect(validPass).to.equal(true);
+
+                    done();
+                })           
+            });
+        });
+    });
+
+    it("delete a resource", function(done) {
+        // Get all resources
+        server.inject("/api/resource", function(response) {
+            var result = response.result;
+            var options = {
+                method: "DELETE",
+                url: "/api/resource/"+result[0]._id
+            };
+            server.inject(options, function(response) {
+                var result = response.result;
+                expect(response.statusCode).to.equal(200);
+                expect(result).to.be.instanceof(Object);
+                expect(result.message).to.equal('Deleted successfully');
+                
+                done();
+            });
+        });
     });
 
 
-
-    it("lists all resources", function(done) {
-        // console.log(db)
-        // var collection = db
-        // .collection('users')
-        // .find({})
-        // .sort({ "_id" : 1})
-        // .toArray(function(err, docs) {
-        //     // if (err) throw err;
-        //     // next(docs).type('application/json');
-        //     expect(docs).to.be.instanceof(Array);
-        //     done();
-        // });
-
-	    var options = {
-	        method: "GET",
-	        url: "/api/user"
-	    };
-
-	    
-	 
-	    server.inject(options, function(response) {
-	        var result = response.result;
-	 		console.log(result)
-	        Lab.expect(response.statusCode).to.equal(200);
-	        // //Lab.expect(result).to.be.instanceof(Array);
-	        // // Lab.expect(result).to.have.length(5);
-	 
-	        done();
-	    });
-	});
 });
