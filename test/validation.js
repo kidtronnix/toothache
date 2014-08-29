@@ -8,23 +8,31 @@ var Lab = require("lab"),
 
 // Internal config stuff
 var CRUD = {
-    bcrypt: 'password',
-    create: Joi.object().keys({
-        email: Joi.string().required(),
-        password: Joi.string().required()
-    }),
-    update: Joi.object().keys({
-        email: Joi.string(),
-        password: Joi.string()
-    }),
-    defaults: {
-        access: 'normal',
-        activated: false
+    collection: 'resources',
+    create: {
+        bcrypt: 'password',
+        date: 'created',
+        payload: Joi.object().keys({
+            email: Joi.string().required(),
+            password: Joi.string().required()
+        }),
+        defaults: {
+            access: 'normal',
+            activated: false
+        },
     },
+    update: {
+        bcrypt: 'password',
+        date: 'updated',
+        payload: Joi.object().keys({
+            email: Joi.string(),
+            password: Joi.string()
+        })
+    },    
     validationOpts: {
         abortEarly: false
     }
-}
+};
 
 
 
@@ -140,7 +148,7 @@ describe("Toothache", function() {
                 url: "/api/resource/"+result._id,
                 payload: JSON.stringify(badPayload)
             };
-            
+
             server.inject(options, function(response) {
                 var result = response.result;
 
@@ -173,7 +181,7 @@ describe("Toothache", function() {
             expect(response.statusCode).to.equal(400);
             expect(result).to.be.instanceof(Object);
             expect(result.error).to.equal('Bad Request');
-            expect(result.message).to.equal('No resource found');
+            expect(result.message).to.equal('No doc found in resources');
             
             done();
         });
@@ -194,7 +202,7 @@ describe("Toothache", function() {
             expect(response.statusCode).to.equal(400);
             expect(result).to.be.instanceof(Object);
             expect(result.error).to.equal('Bad Request');
-            expect(result.message).to.equal('No resource found');
+            expect(result.message).to.equal('No doc found in resources');
             
             done();
         });
@@ -211,7 +219,7 @@ describe("Toothache", function() {
             expect(response.statusCode).to.equal(400);
             expect(result).to.be.instanceof(Object);
             expect(result.error).to.equal('Bad Request');
-            expect(result.message).to.equal('No resource found');
+            expect(result.message).to.equal('No doc found in resources');
             
             done();
         });

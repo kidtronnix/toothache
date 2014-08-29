@@ -16,14 +16,15 @@ module.exports = function(config) {
 
     // get db from config
     var db = config.db;
+    // get mongo collection
+    var coll = config.collection;
     
     var CRUD = {
         conf: function(request, reply) {
             // Return our config
             return reply(JSON.stringify(config)).type('application/json');
         },
-        getAll: function(request, reply) {
-            var path = request.path.split('/');    
+        getAll: function(request, reply) {    
             var find = {};
            
             // Access Control
@@ -34,7 +35,7 @@ module.exports = function(config) {
             
             
             var collection = db
-            .collection(path[2]+'s')
+            .collection(coll)
             .find(find)
             .sort({ "_id" : 1})
             .toArray(function(err, docs) {
@@ -45,20 +46,16 @@ module.exports = function(config) {
         },
         create: function(request, reply) {
             
-            // Get our specific route config
-            var path = request.path.split('/');
-            var resource = path[2];
-
             
             // add access control
             // We need to stop create if not allowed, only if:
             // route is authenticated, we are not admin, and we protect create
             if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.accessControl.create) {
-                var error = Boom.unauthorized('You are not permitted to create a '+resource);
+                var error = Boom.unauthorized('You are not permitted to insert into '+coll);
                 return reply(error);
             }
             else {
-                var validSchema = config.create;
+                var validSchema = config.create.payload;
 
                 // console.log(JSON.stringify(request.payload, null, 4))
                 // First validate schema
@@ -71,27 +68,27 @@ module.exports = function(config) {
                     else {
                         
                         // Add our defaults
-                        var insert = Extend({},config.defaults, request.payload);
+                        var insert = Extend({},config.create.defaults, request.payload);
 
                         // If config has date option, add a timestamp
-                        if(config.date) {
+                        if(config.create.date) {
                             var ts = new Date();
-                            insert[config.date] = ts;
+                            insert[config.create.date] = ts;
                         }
 
-                        if(config.bcrypt) {
+                        if(config.create.bcrypt) {
                             // Hash password before insert
-                            insert[config.bcrypt] = Bcrypt.hashSync(insert[config.bcrypt], salt);
+                            insert[config.create.bcrypt] = Bcrypt.hashSync(insert[config.create.bcrypt], salt);
                         }
                         
 
                         // Add uId if set to anything in defaults
-                        if(request.auth.isAuthenticated && !(config.defaults === undefined || config.defaults["uId"] === undefined)) {
+                        if(request.auth.isAuthenticated && !(config.create.defaults === undefined || config.create.defaults["uId"] === undefined)) {
                             insert.uId = request.auth.artifacts.id;
                         }
 
                         // Connect to mongo
-                        var collection = db.collection(resource+'s');
+                        var collection = db.collection(coll);
 
                         // Perform Insert
                         collection.insert(insert, function(err, docs) {
@@ -103,36 +100,32 @@ module.exports = function(config) {
             }   
         },
         get: function(request, reply) {
-            var path = request.path.split('/');
             
-                var collection = db
-                .collection(path[2]+'s')
-                .findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
-                    if(err) throw err;
-                    
-                    if(doc == null) {
-                        var error = Boom.badRequest('No '+path[2]+ ' found');
-                        return reply(error);
-                    }
-                    // access control
-                    else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId && doc.uId !== request.auth.artifacts.id) {
-                        var error = Boom.unauthorized('You are not permitted to update this');
-                        return reply(error);
-                    }
-                    else {
-                        return reply(doc).type('application/json');
-                    }                    
-                });
+            
+            var collection = db
+            .collection(coll)
+            .findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
+                if(err) throw err;
+                
+                if(doc == null) {
+                    var error = Boom.badRequest('No doc found in '+coll);
+                    return reply(error);
+                }
+                // access control
+                else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId && doc.uId !== request.auth.artifacts.id) {
+                    var error = Boom.unauthorized('You are not permitted to update this');
+                    return reply(error);
+                }
+                else {
+                    return reply(doc).type('application/json');
+                }                    
+            });
             
         },
         update: function(request, reply) {
-            // Get our specific route config
-            var path = request.path.split('/');
-            var resource = path[2];
-
             // Resource ID from URL
             var resourceId = request.params.id;
-            var validSchema = config.update;
+            var validSchema = config.update.payload;
 
             Joi.validate(request.payload, validSchema, config.validationOpts, function (err, value) {
                 if(err !== null) {
@@ -142,20 +135,20 @@ module.exports = function(config) {
                 else {
                     var update = request.payload;
 
-                    if(config.bcrypt && update[config.bcrypt]) {
+                    if(config.update.bcrypt && update[config.update.bcrypt]) {
                         // Hash password before update
-                        update[config.bcrypt] = Bcrypt.hashSync(update[config.bcrypt], salt);
+                        update[config.update.bcrypt] = Bcrypt.hashSync(update[config.update.bcrypt], salt);
                     }
 
                     // Update Resource with payload
-                    var collection = db.collection(resource+'s');
+                    var collection = db.collection(coll);
 
                     // Check doc exists & uId matches doc
                     collection.findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
 
                         // doc exists
                         if(doc === null) {
-                            var error = Boom.badRequest('No '+path[2]+' found');
+                            var error = Boom.badRequest('No doc found in '+coll);
                             return reply(error);
                         } 
                         // access control
@@ -174,13 +167,12 @@ module.exports = function(config) {
             }); 
         },
         del: function(request, reply) {
-            var path = request.path.split('/');
             var _del = {"_id": ObjectId(request.params.id)};
 
-            var collection = db.collection(path[2]+'s');
+            var collection = db.collection(coll);
             collection.findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
                 if(doc === null) {
-                    var error = Boom.badRequest('No '+path[2]+' found');
+                    var error = Boom.badRequest('No doc found in '+coll);
                     return reply(error);
                 }
                 else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId && doc.uId !== request.auth.artifacts.id) {

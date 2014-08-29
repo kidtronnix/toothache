@@ -7,25 +7,30 @@ var Lab = require("lab"),
     Bcrypt = require('bcryptjs');
 
 // Internal config stuff
-var internals = {
-    // All config for mongo-crud
-    CRUD: {
+var CRUD = {
+    collection: 'resources',
+    create: {
         bcrypt: 'password',
-        create: Joi.object().keys({
+        date: 'created',
+        payload: Joi.object().keys({
             email: Joi.string().required(),
             password: Joi.string().required()
-        }),
-        update: Joi.object().keys({
-            email: Joi.string(),
-            password: Joi.string()
         }),
         defaults: {
             access: 'normal',
             activated: false
         },
-        validationOpts: {
-            abortEarly: false
-        }
+    },
+    update: {
+        bcrypt: 'password',
+        date: 'updated',
+        payload: Joi.object().keys({
+            email: Joi.string(),
+            password: Joi.string()
+        })
+    },    
+    validationOpts: {
+        abortEarly: false
     }
 };
 
@@ -41,7 +46,6 @@ var expect = Lab.expect;
 describe("MongoCrud", function() {
 
 	var server = new Hapi.Server();
-	var MongoCrud = require('../')(internals.CRUD);
 
     before(function (done) {
         var MongoClient = require('mongodb').MongoClient
@@ -49,8 +53,8 @@ describe("MongoCrud", function() {
             expect(err).to.not.exist;
 
             // Construct MongoCrud
-            internals.CRUD.db = db;
-            var MongoCrud = require('../')(internals.CRUD);
+            CRUD.db = db;
+            var MongoCrud = require('../')(CRUD);
 
             // Get All
             server.route({
