@@ -3,7 +3,7 @@ Toothache
 
 A Hapi plugin that removes the toothache from creating CRUD endpoints for MongoDB.
 
-Current version: **0.0.x** [![Build Status](https://travis-ci.org/smaxwellstewart/toothache.svg?branch=master)](https://travis-ci.org/smaxwellstewart/toothache)
+Current version: **0.1.x** [![Build Status](https://travis-ci.org/smaxwellstewart/toothache.svg?branch=master)](https://travis-ci.org/smaxwellstewart/toothache)
 
 ### What is this plugin?
 
@@ -15,14 +15,14 @@ This plugin instantly adds the following functionality to any mongo db...
 
 ### Usage
 
-The below is intended to be added into a hapi plugin. In our example case, we will make a User endpoint for hapi
+The below is intended to be added into a hapi plugin. In our example case, we will make a `User` endpoint for a Hapi server.
 
 ##### Configure
 
 Configure toothache with desired behaviour... 
 
 ```js
-var CRUD: {
+var CRUD = {
 	// Sets 'password' field to be bcrypted
     bcrypt: 'password',
     // Valid create payload 
@@ -47,59 +47,59 @@ var CRUD: {
     // MongoDB connection
 	db: db
 }
-var Toothache = require('toothache')(CRUD);
+var User = require('toothache')(CRUD);
 ```
 
 ##### Add Routes
 
-Once we have configured Toothache, we have the following CRUD functions exposed:
+Once we have configured toothache, we have the following CRUD functions exposed:
 
-* Toothache.create
-* Toothache.get
-* Toothache.getAll
-* Toothache.update
-* Toothache.del
+* User.create
+* User.get
+* User.getAll
+* User.update
+* User.del
 
 These can be used in a Hapi plugin like this...
 
 ```js
-// Get All
-plugin.route({
-    method: 'GET', path: '/api/resource',
-    config: {
-        handler: Toothache.getAll
-    }
-});
-
 // Create
 plugin.route({
-    method: 'POST', path: '/api/resource',
+    method: 'POST', path: '/api/user',
     config: {
-        handler: Toothache.create
+        handler: User.create
     }
 });
 
 // Get a resource
 plugin.route({
-    method: 'GET', path: '/api/resource/{id}',
+    method: 'GET', path: '/api/user/{id}',
     config: {
-        handler: Toothache.get
+        handler: User.get
+    }
+});
+
+// Get All
+plugin.route({
+    method: 'GET', path: '/api/user',
+    config: {
+        handler: User.getAll
     }
 });
 
 // Update
 plugin.route({
-    method: 'PUT', path: '/api/resource/{id}',
+    method: 'PUT', path: '/api/user/{id}',
     config: {
-        handler: Toothache.update
+        handler: User.update
     }
 });
 
 // Delete
 plugin.route({
-    method: 'DELETE', path: '/api/resource/{id}',
+    method: 'DELETE', path: '/api/user/{id}',
     config: {
-        handler: Toothache.del
+        handler: User.del
     }
 });
 ```

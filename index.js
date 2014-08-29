@@ -53,7 +53,11 @@ module.exports = function(config) {
             // add access control
             // We need to stop create if not allowed, only if:
             // route is authenticated, we are not admin, and we protect create
-            if(!request.auth.isAuthenticated || request.auth.credentials.access === 'admin' ||  request.auth.credentials.access === config.accessControl.create) {
+            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.accessControl.create) {
+                var error = Boom.unauthorized('You are not permitted to create a '+resource);
+                return reply(error);
+            }
+            else {
                 var validSchema = config.create;
 
                 // console.log(JSON.stringify(request.payload, null, 4))
@@ -61,8 +65,7 @@ module.exports = function(config) {
                 // respond with errors 
                 Joi.validate(request.payload, validSchema, config.validationOpts, function (err, value) {
                     if(err) {
-                        console.log(err)
-                        var error = Boom.error.badRequest(err);
+                        var error = Boom.badRequest(err);
                         return reply(error);   
                     }
                     else {
@@ -105,33 +108,20 @@ module.exports = function(config) {
                 var collection = db
                 .collection(path[2]+'s')
                 .findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
+                    if(err) throw err;
                     
-                    if(err !== null) {
-                        var error = Boom.error.badRequest(err);
-                        return reply(error);
-                    }
                     if(doc == null) {
-                        var error = Boom.error.badRequest('No '+path[2]+ ' found');
+                        var error = Boom.badRequest('No '+path[2]+ ' found');
                         return reply(error);
                     }
-
-                    // Access Control
-                    if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin') {
-                        var uId = request.auth.artifacts.id;
-                        if(doc.uId === uId) {
-                            // console.log('Retreived doc...');
-                            // console.log(doc);
-                            return reply(doc).type('application/json');
-
-                        } else {
-                            var error = Boom.error.unauthorized('You are not permitted to see this');
-                            return reply(error);
-                        }
-                    } else {
-                        
-                        return reply(doc).type('application/json');
+                    // access control
+                    else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId && doc.uId !== request.auth.artifacts.id) {
+                        var error = Boom.unauthorized('You are not permitted to update this');
+                        return reply(error);
                     }
-                    
+                    else {
+                        return reply(doc).type('application/json');
+                    }                    
                 });
             
         },
@@ -146,13 +136,10 @@ module.exports = function(config) {
 
             Joi.validate(request.payload, validSchema, config.validationOpts, function (err, value) {
                 if(err !== null) {
-                    var error = Boom.error.badRequest(err);
+                    var error = Boom.badRequest(err);
                     return reply(error);
                 }
                 else {
-
-
-
                     var update = request.payload;
 
                     if(config.bcrypt && update[config.bcrypt]) {
@@ -162,35 +149,27 @@ module.exports = function(config) {
 
                     // Update Resource with payload
                     var collection = db.collection(resource+'s');
-                    
 
-                    // Add access control
-                    if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin') {
-                        collection.findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
-                            if(doc === null) {
-                                var error = Boom.error.badRequest('No '+path[2]+' found.');
-                                return reply(error);
-                            }
-                            var uId = request.auth.artifacts.id;
-                            if(doc.uId !== uId) {
-                                var error = Boom.error.unauthorized('You are not permitted to update this');
-                                next(error);
+                    // Check doc exists & uId matches doc
+                    collection.findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
 
-                            } else {
-                                collection.update({"_id": ObjectId(resourceId)}, {$set: update}, {}, function(err, doc) {
-                                    if(err) throw err;
-                                    return reply({error:null,message:'Updated successfully'});
-                                });
-                            }
-                        })
-                    }
-                    else {
-                        collection.update({"_id": ObjectId(resourceId)}, {$set: update}, {}, function(err, doc) {
-                            if(err) throw err;
-                            return reply({error:null,message:'Updated successfully'});
-                        });
-                    }
-
+                        // doc exists
+                        if(doc === null) {
+                            var error = Boom.badRequest('No '+path[2]+' found');
+                            return reply(error);
+                        } 
+                        // access control
+                        else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId && doc.uId !== request.auth.artifacts.id) {
+                            var error = Boom.unauthorized('You are not permitted to update this');
+                            return reply(error);
+                        }
+                        else {
+                            collection.update({"_id": ObjectId(resourceId)}, {$set: update}, {}, function(err, doc) {
+                                if(err) throw err;
+                                return reply({error:null,message:'Updated successfully'});
+                            });
+                        }
+                    })
                 }   
             }); 
         },
@@ -199,51 +178,23 @@ module.exports = function(config) {
             var _del = {"_id": ObjectId(request.params.id)};
 
             var collection = db.collection(path[2]+'s');
-
-
-            // Add access control
-            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin') {
-                collection.findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
-                    if(doc === null) {
-                        var error = Boom.error.badRequest('No '+path[2]+' found.');
-                        return reply(error);
-                    }
-                    var uId = request.auth.artifacts.id;
-                    if(doc.uId !== uId) {
-                        var error = Boom.error.unauthorized('You are not permitted to delete this');
-                        return reply(error);
-                    }
-                    else
-                    {
-                         // Debug / Logging
-                        collection.remove( _del, function(err) {
-                            if(err) throw err;
-                            return reply({error:null,message:'Deleted successfully'});          
-                        });
-                    }
-                })
-            } else {
-                collection.remove( _del, function(err) {
-                    if(err) throw err;
-                    return reply({error:null,message:'Deleted successfully'});          
-                });
-            }
+            collection.findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
+                if(doc === null) {
+                    var error = Boom.badRequest('No '+path[2]+' found');
+                    return reply(error);
+                }
+                else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId && doc.uId !== request.auth.artifacts.id) {
+                    var error = Boom.unauthorized('You are not permitted to delete this');
+                    return reply(error);
+                }
+                else {
+                    collection.remove( _del, function(err) {
+                        if(err) throw err;
+                        return reply({error:null,message:'Deleted successfully'});          
+                    });
+                }
+            });
         }
     };
     return CRUD;
 }
-
-    
-        
-
-    
-        
-    
-
-    
-
-    
-
-
-
-    
