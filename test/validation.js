@@ -52,7 +52,7 @@ describe("Toothache", function() {
         var MongoClient = require('mongodb').MongoClient
         MongoClient.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
             expect(err).to.not.exist;
-
+            
             // Construct Resource CRUD
             CRUD.db = db;
             var Resource = require('../')(CRUD);
@@ -155,6 +155,13 @@ describe("Toothache", function() {
                 expect(response.statusCode).to.equal(400);
                 expect(result).to.be.instanceof(Object);
                 expect(result.error).to.equal('Bad Request');
+
+                options.method = "DELETE";
+
+                server.inject(options, function(response) {
+
+                })
+
                 
                 done();
             });
@@ -224,6 +231,7 @@ describe("Toothache", function() {
             done();
         });
     });
+
 
 
 });

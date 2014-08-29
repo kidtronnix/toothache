@@ -51,7 +51,7 @@ describe("MongoCrud", function() {
         var MongoClient = require('mongodb').MongoClient
         MongoClient.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
             expect(err).to.not.exist;
-
+            
             // Construct MongoCrud
             CRUD.db = db;
             var MongoCrud = require('../')(CRUD);
@@ -95,6 +95,7 @@ describe("MongoCrud", function() {
                     handler: MongoCrud.del
                 }
             });
+            
             done();
             
         })
@@ -112,8 +113,6 @@ describe("MongoCrud", function() {
             payload: JSON.stringify(payload)
         };
 
-        
-     
         server.inject(options, function(response) {
             var result = response.result;
             
@@ -121,7 +120,7 @@ describe("MongoCrud", function() {
             expect(result).to.be.instanceof(Object);
             expect(result.access).to.equal('normal');
             expect(result.activated).to.equal(false);
-
+            expect(result.created).to.be.instanceof(Date);
             // Test password was bcrypted correctly
             var validPass = Bcrypt.compareSync(payload.password, result.password);
             expect(validPass).to.equal(true);
@@ -189,6 +188,7 @@ describe("MongoCrud", function() {
                     var result = response.result;
 
                     expect(result.email).to.equal(payload.email);
+                    expect(result.updated).to.be.instanceof(Date);
                     
                     // Test password was bcrypted correctly
                     var validPass = Bcrypt.compareSync(payload.password, result.password);
@@ -218,6 +218,4 @@ describe("MongoCrud", function() {
             });
         });
     });
-
-
 });

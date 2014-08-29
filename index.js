@@ -20,10 +20,6 @@ module.exports = function(config) {
     var coll = config.collection;
     
     var CRUD = {
-        conf: function(request, reply) {
-            // Return our config
-            return reply(JSON.stringify(config)).type('application/json');
-        },
         getAll: function(request, reply) {    
             var find = {};
            
@@ -32,7 +28,6 @@ module.exports = function(config) {
                 var uId = request.auth.artifacts.id;
                 find.uId = uId;
             }
-            
             
             var collection = db
             .collection(coll)
@@ -50,7 +45,7 @@ module.exports = function(config) {
             // add access control
             // We need to stop create if not allowed, only if:
             // route is authenticated, we are not admin, and we protect create
-            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.accessControl.create) {
+            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.create.access) {
                 var error = Boom.unauthorized('You are not permitted to insert into '+coll);
                 return reply(error);
             }
@@ -113,7 +108,7 @@ module.exports = function(config) {
                 }
                 // access control
                 else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId && doc.uId !== request.auth.artifacts.id) {
-                    var error = Boom.unauthorized('You are not permitted to update this');
+                    var error = Boom.unauthorized('You are not permitted to see this');
                     return reply(error);
                 }
                 else {
@@ -138,6 +133,10 @@ module.exports = function(config) {
                     if(config.update.bcrypt && update[config.update.bcrypt]) {
                         // Hash password before update
                         update[config.update.bcrypt] = Bcrypt.hashSync(update[config.update.bcrypt], salt);
+                    }
+                    if(config.update.date) {
+                        var ts = new Date();
+                        update[config.update.date] = ts;
                     }
 
                     // Update Resource with payload
