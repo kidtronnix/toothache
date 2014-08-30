@@ -23,30 +23,47 @@ Configure toothache with desired behaviour...
 
 ```js
 var CRUD = {
-	// Sets 'password' field to be bcrypted
-    bcrypt: 'password',
-    // Valid create payload 
-    create: Joi.object().keys({ 
-        email: Joi.string().required(),
-        password: Joi.string().required()
-    }),
-    // Valid update payload
-    update: Joi.object().keys({
-        email: Joi.string(),
-        password: Joi.string()
-    }),
-    // Default values that will be added at doc creation
-    defaults: {
-        access: 'normal',
-        activated: false
+    // Mongo collection
+    collection: 'resources',
+    // Create options
+    create: {
+        // Sets 'password' field to be bcrypted at doc creation
+        bcrypt: 'password',
+        // Sets 'created' field to be dated at doc creation
+        date: 'created',
+        // Valid create payload 
+        payload: Joi.object().keys({
+            email: Joi.string().required(),
+            password: Joi.string().required()
+        }),
+        // Default values that will be added at doc creation
+        defaults: {
+            access: 'normal',
+            activated: false
+        },
+        // Sets which role can create 
+        access: "admin"
     },
-    // Joi options when validating payloads
+    // Update options
+    update: {
+        // Sets 'password' field to be bcrypted at doc creation
+        bcrypt: 'password',
+        // Sets 'updated' field to be dated at doc creation
+        date: 'updated',
+        // Valid create payload 
+        payload: Joi.object().keys({
+            email: Joi.string(),
+            password: Joi.string()
+        })
+    },
+    // Joi options when validating payloads    
     validationOpts: {
         abortEarly: false
     },
     // MongoDB connection
-	db: db
-}
+    db: db
+};
+
 var User = require('toothache')(CRUD);
 ```
 
