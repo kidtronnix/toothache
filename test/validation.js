@@ -52,7 +52,7 @@ describe("Toothache", function() {
         var MongoClient = require('mongodb').MongoClient
         MongoClient.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
             expect(err).to.not.exist;
-            
+
             // Construct Resource CRUD
             CRUD.db = db;
             var Resource = require('../')(CRUD);
@@ -166,16 +166,9 @@ describe("Toothache", function() {
                 done();
             });
         });
-
-        
-
-        
-        
     });
 
-
-
-    it("get route gives errors if invalid id", function(done) {
+    it("get route gives errors if can't find doc", function(done) {
 
 
         var options = {
@@ -194,7 +187,7 @@ describe("Toothache", function() {
         });
     });
 
-    it("update route gives errors if invalid id", function(done) {
+    it("update route gives errors if can't find doc", function(done) {
         var payload = {
             email: "junk@test.com"
         };
@@ -215,7 +208,7 @@ describe("Toothache", function() {
         });
     });
 
-    it("delete route gives errors if invalid id", function(done) {
+    it("get route gives errors if can't find doc", function(done) {
         var options = {
             method: "DELETE",
             url: "/api/resource/0000000000d0a1b87bfb0683"

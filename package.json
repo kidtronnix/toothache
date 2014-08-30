@@ -33,6 +33,7 @@
     "mongodb": "^1.4.9"
   },
   "devDependencies": {
+    "coveralls": "^2.11.1",
     "hapi": "^6.7.1",
     "hapi-auth-hawk": "^1.1.1",
     "hawk": "^2.2.3",

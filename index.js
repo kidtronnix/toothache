@@ -78,7 +78,7 @@ module.exports = function(config) {
                         
 
                         // Add uId if set to anything in defaults
-                        if(request.auth.isAuthenticated && !(config.create.defaults === undefined || config.create.defaults["uId"] === undefined)) {
+                        if(request.auth.isAuthenticated && config.create.defaults["uId"] !== undefined) {
                             insert.uId = request.auth.artifacts.id;
                         }
 
@@ -107,7 +107,7 @@ module.exports = function(config) {
                     return reply(error);
                 }
                 // access control
-                else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId && doc.uId !== request.auth.artifacts.id) {
+                else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId !== request.auth.artifacts.id) {
                     var error = Boom.unauthorized('You are not permitted to see this');
                     return reply(error);
                 }
@@ -151,7 +151,7 @@ module.exports = function(config) {
                             return reply(error);
                         } 
                         // access control
-                        else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId && doc.uId !== request.auth.artifacts.id) {
+                        else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId !== request.auth.artifacts.id) {
                             var error = Boom.unauthorized('You are not permitted to update this');
                             return reply(error);
                         }
@@ -174,7 +174,7 @@ module.exports = function(config) {
                     var error = Boom.badRequest('No doc found in '+coll);
                     return reply(error);
                 }
-                else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId && doc.uId !== request.auth.artifacts.id) {
+                else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId !== request.auth.artifacts.id) {
                     var error = Boom.unauthorized('You are not permitted to delete this');
                     return reply(error);
                 }
