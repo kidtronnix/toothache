@@ -24,7 +24,7 @@ Configure toothache with desired behaviour...
 ```js
 var CRUD = {
     // Mongo collection
-    collection: 'resources',
+    collection: 'users',
     // Create options
     create: {
         // Sets 'password' field to be bcrypted at doc creation
