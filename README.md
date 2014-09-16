@@ -25,7 +25,7 @@ Configure toothache with desired behaviour...
 // User model
 var CRUD = {
     db: db,                 // MongoDB connection
-    collection: 'users',    // MongoDB connection
+    collection: 'users',    // MongoDB collection
     // Create options
     create: {
         bcrypt: 'password', // Sets 'password' field to be bcrypted at doc creation
@@ -134,7 +134,6 @@ Access control is only added if a route is authenticated. An `access` field must
 
 ```js
 getCredentialsFunc: function (id, callback) {
-    // Core creds
     var credentials = {
         user1: {
             key: 'pass1',
