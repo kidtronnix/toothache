@@ -73,7 +73,7 @@ Once we have configured toothache, we have the following CRUD functions exposed:
 
 * User.create
 * User.get
-* User.getAll
+* User.find
 * User.update
 * User.del
 
@@ -100,9 +100,18 @@ plugin.route({
 plugin.route({
     method: 'GET', path: '/api/user',
     config: {
-        handler: User.getAll
+        handler: User.find
     }
 });
+
+// Find, will search collection using payload for criteria
+plugin.route({
+    method: 'POST', path: '/api/user/find',
+    config: {
+        handler: User.find
+    }
+});
+
 
 // Update
 plugin.route({

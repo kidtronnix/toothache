@@ -8,7 +8,7 @@ var Lab = require("lab"),
 
 // Internal config stuff
 var CRUD = {
-    collection: 'resources',
+    collection: 'resources2',
     create: {
         bcrypt: 'password',
         date: 'created',
@@ -43,7 +43,7 @@ var describe = lab.describe;
 var it = lab.it;
 var expect = Lab.expect;
 
-describe("MongoCrud", function() {
+describe("Toothache", function() {
 
 	var server = new Hapi.Server();
 
@@ -52,15 +52,15 @@ describe("MongoCrud", function() {
         MongoClient.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
             expect(err).to.not.exist;
             
-            // Construct MongoCrud
+            // Construct Resource
             CRUD.db = db;
-            var MongoCrud = require('../')(CRUD);
+            var Resource = require('../')(CRUD);
 
             // Get All
             server.route({
                 method: 'GET', path: '/api/resource',
                 config: {
-                    handler: MongoCrud.getAll
+                    handler: Resource.find
                 }
             });
 
@@ -68,7 +68,7 @@ describe("MongoCrud", function() {
             server.route({
                 method: 'POST', path: '/api/resource',
                 config: {
-                    handler: MongoCrud.create
+                    handler: Resource.create
                 }
             });
 
@@ -76,7 +76,15 @@ describe("MongoCrud", function() {
             server.route({
                 method: 'GET', path: '/api/resource/{id}',
                 config: {
-                    handler: MongoCrud.get
+                    handler: Resource.get
+                }
+            });
+
+            // Find
+            server.route({
+                method: 'POST', path: '/api/resource/find',
+                config: {
+                    handler: Resource.find
                 }
             });
 
@@ -84,7 +92,7 @@ describe("MongoCrud", function() {
             server.route({
                 method: 'PUT', path: '/api/resource/{id}',
                 config: {
-                    handler: MongoCrud.update
+                    handler: Resource.update
                 }
             });
 
@@ -92,7 +100,7 @@ describe("MongoCrud", function() {
             server.route({
                 method: 'DELETE', path: '/api/resource/{id}',
                 config: {
-                    handler: MongoCrud.del
+                    handler: Resource.del
                 }
             });
             
@@ -130,10 +138,6 @@ describe("MongoCrud", function() {
     })
 
     it("lists all resources", function(done) {
-        var options = {
-            method: "GET",
-            url: "/api/resource"
-        };
 
         server.inject("/api/resource", function(response) {
             var result = response.result;
@@ -218,4 +222,164 @@ describe("MongoCrud", function() {
             });
         });
     });
+
+    it("finds a resource based on payload", function(done) {
+
+        // Insert 2 resources
+        for(var i = 1; i < 3; i++) {
+            var payload = {
+                email: "test"+i+"@acme.com",
+                password: "newpass"
+            };
+
+            var options = {
+                method: "POST",
+                url: "/api/resource",
+                payload: JSON.stringify(payload)
+            };
+
+            server.inject(options, function(response) {})
+        }
+
+        var payload = {
+            email: "test1@acme.com"
+        };
+
+        var options = {
+            method: "POST",
+            url: "/api/resource/find",
+            payload: JSON.stringify(payload)
+        };
+
+        server.inject(options, function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(200);
+            expect(result).to.be.instanceof(Array);
+            expect(result).to.have.length(1);
+
+            done();
+        });            
+    });
+
+    it("whitelist filters fields for multiple docs", function(done) {
+        CRUD.read = {
+            whitelist: ['_id','email']
+        };
+
+        var Resource = require('../')(CRUD);
+
+        // Get All
+        server.route({
+            method: 'GET', path: '/api/resource/whitelist',
+            config: {
+                handler: Resource.find
+            }
+        });
+
+        server.inject('/api/resource/whitelist', function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(200);
+            expect(result[0]).to.be.instanceof(Object);
+            expect(typeof result[0].email).to.equal('string');
+            expect(result[0].password).to.not.exist;
+            
+
+            done();
+        });
+    })
+
+    it("whitelist filters fields for ind doc", function(done) {
+        CRUD.read = {
+            whitelist: ['_id','email']
+        };
+
+        var Resource = require('../')(CRUD);
+
+        // Get All
+        server.route({
+            method: 'GET', path: '/api/resource/{id}/whitelist',
+            config: {
+                handler: Resource.get
+            }
+        });
+
+        server.inject('/api/resource', function(response) {
+            var id = response.result[0]['_id'];
+            
+            server.inject('/api/resource/'+id+'/whitelist', function(response) {
+                var result = response.result;
+                
+                expect(response.statusCode).to.equal(200);
+                expect(result).to.be.instanceof(Object);
+                expect(typeof result.email).to.equal('string');
+                expect(result.password).to.not.exist;
+                
+                done();
+            })
+            
+        });
+    })
+
+    it("blacklist filters fields for multiple docs", function(done) {
+        CRUD.read = {
+            blacklist: ['password']
+        };
+
+        var Resource = require('../')(CRUD);
+
+        // Get All
+        server.route({
+            method: 'GET', path: '/api/resource/blacklist',
+            config: {
+                handler: Resource.find
+            }
+        });
+
+        server.inject('/api/resource/blacklist', function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(200);
+            expect(result[0]).to.be.instanceof(Object);
+            expect(typeof result[0].email).to.equal('string');
+            expect(result[0].password).to.not.exist;
+            
+
+            done();
+        });
+    })
+
+    it("blacklist filters fields for ind doc", function(done) {
+        CRUD.read = {
+            blacklist: ['password']
+        };
+
+        var Resource = require('../')(CRUD);
+
+        // Get All
+        server.route({
+            method: 'GET', path: '/api/resource/{id}/blacklist',
+            config: {
+                handler: Resource.get
+            }
+        });
+
+        server.inject('/api/resource', function(response) {
+            var id = response.result[0]['_id'];
+            
+            server.inject('/api/resource/'+id+'/blacklist', function(response) {
+                var result = response.result;
+
+                expect(response.statusCode).to.equal(200);
+                expect(result).to.be.instanceof(Object);
+                expect(typeof result.email).to.equal('string');
+                expect(result.password).to.not.exist;
+                
+                done();
+            })
+            
+        });
+    })
+
 });

@@ -31,7 +31,7 @@ var credentials = {
 }
 
 var CRUD = {
-    collection: 'resources',
+    collection: 'resources1',
     create: {
         payload: Joi.object().keys({
             field: Joi.string().required(),
@@ -100,7 +100,15 @@ describe("Toothache", function() {
                     method: 'GET', path: '/api/resource',
                     config: {
                         auth: 'web',
-                        handler: Resource.getAll
+                        handler: Resource.find
+                    }
+                });
+
+                server.route({
+                    method: 'POST', path: '/api/resource/find',
+                    config: {
+                        auth: 'web',
+                        handler: Resource.find
                     }
                 });
 
@@ -212,7 +220,7 @@ describe("Toothache", function() {
             
             expect(response.statusCode).to.equal(401);
             expect(result).to.be.instanceof(Object);
-            expect(result.message).to.equal("You are not permitted to insert into resources");
+            expect(result.message).to.equal("You are not permitted to insert into resources1");
             
             done();
         });
@@ -336,6 +344,39 @@ describe("Toothache", function() {
         });
     });
 
+    it("admin user can access other user's resource", function(done) {
+        var options = {
+            method: "GET",
+            url: "http://localhost.com/api/resource",
+            headers: {}
+        };
+        // Add auth
+        var header = Hawk.client.header(options.url, options.method, { credentials: credentials.normal });
+        options.headers.Authorization = header.field;
+
+        server.inject(options, function(response) {
+            var result = response.result;
+            var options = {
+                method: "GET",
+                url: "http://localhost.com/api/resource/"+result[0]._id,
+                headers: {}
+            };
+            // Add auth
+            var header = Hawk.client.header(options.url, options.method, { credentials: credentials.admin });
+            options.headers.Authorization = header.field;
+
+            server.inject(options, function(response) {
+                var result = response.result;
+
+                expect(response.statusCode).to.equal(200);
+                expect(result).to.be.instanceof(Object);
+                
+                
+                done();
+            })  
+        });
+    });
+
     it("normal user can't update other user's resource", function(done) {
         var options = {
             method: "GET",
@@ -374,6 +415,43 @@ describe("Toothache", function() {
         });
     });
 
+    it("admin user can update other user's resource", function(done) {
+        var options = {
+            method: "GET",
+            url: "http://localhost.com/api/resource",
+            headers: {}
+        };
+        // Add auth
+        var header = Hawk.client.header(options.url, options.method, { credentials: credentials.normal });
+        options.headers.Authorization = header.field;
+
+        server.inject(options, function(response) {
+            var result = response.result;
+            var payload = {
+                field: "some value"
+            };
+
+            var options = {
+                method: "PUT",
+                url: "http://localhost.com/api/resource/"+result[0]._id,
+                payload: JSON.stringify(payload),
+                headers: {}
+            };
+            // Add auth
+            var header = Hawk.client.header(options.url, options.method, { credentials: credentials.admin });
+            options.headers.Authorization = header.field;
+
+            server.inject(options, function(response) {
+                var result = response.result;
+
+                expect(response.statusCode).to.equal(200);
+                expect(result).to.be.instanceof(Object);
+                
+                done();
+            })  
+        });
+    });
+
     it("normal user can't delete other user's resource", function(done) {
         var options = {
             method: "GET",
@@ -402,6 +480,40 @@ describe("Toothache", function() {
                 expect(result).to.be.instanceof(Object);
                 expect(result.message).to.equal("You are not permitted to delete this");
                 
+                done();
+            })  
+        });
+    });
+
+    it("admin user can delete other user's resource", function(done) {
+        var options = {
+            method: "POST",
+            url: "http://localhost.com/api/resource/find",
+            payload: JSON.stringify({uId:'user2'}),
+            headers: {}
+        };
+        // Add auth
+        var header = Hawk.client.header(options.url, options.method, { credentials: credentials.admin });
+        options.headers.Authorization = header.field;
+
+        server.inject(options, function(response) {
+            var result = response.result;
+            var options = {
+                method: "DELETE",
+                url: "http://localhost.com/api/resource/"+result[0]._id,
+                headers: {}
+            };
+            // Add auth
+            var header = Hawk.client.header(options.url, options.method, { credentials: credentials.admin });
+            options.headers.Authorization = header.field;
+
+            server.inject(options, function(response) {
+                var result = response.result;
+
+                expect(response.statusCode).to.equal(200);
+                expect(result).to.be.instanceof(Object);
+                expect(result.message).to.equal("Deleted successfully");
+
                 done();
             })  
         });

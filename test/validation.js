@@ -8,7 +8,7 @@ var Lab = require("lab"),
 
 // Internal config stuff
 var CRUD = {
-    collection: 'resources',
+    collection: 'resources3',
     create: {
         bcrypt: 'password',
         date: 'created',
@@ -61,7 +61,7 @@ describe("Toothache", function() {
             server.route({
                 method: 'GET', path: '/api/resource',
                 config: {
-                    handler: Resource.getAll
+                    handler: Resource.find
                 }
             });
 
@@ -181,7 +181,7 @@ describe("Toothache", function() {
             expect(response.statusCode).to.equal(400);
             expect(result).to.be.instanceof(Object);
             expect(result.error).to.equal('Bad Request');
-            expect(result.message).to.equal('No doc found in resources');
+            expect(result.message).to.equal('No doc found in resources3');
             
             done();
         });
@@ -202,7 +202,7 @@ describe("Toothache", function() {
             expect(response.statusCode).to.equal(400);
             expect(result).to.be.instanceof(Object);
             expect(result.error).to.equal('Bad Request');
-            expect(result.message).to.equal('No doc found in resources');
+            expect(result.message).to.equal('No doc found in resources3');
             
             done();
         });
@@ -219,7 +219,7 @@ describe("Toothache", function() {
             expect(response.statusCode).to.equal(400);
             expect(result).to.be.instanceof(Object);
             expect(result.error).to.equal('Bad Request');
-            expect(result.message).to.equal('No doc found in resources');
+            expect(result.message).to.equal('No doc found in resources3');
             
             done();
         });

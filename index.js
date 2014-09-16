@@ -14,31 +14,20 @@ var salt = Bcrypt.genSaltSync(10);
 
 module.exports = function(config) {
 
+    var baseConfig = {
+        create: {},
+        read: {},
+        update: {}
+    }
+
+    config = Extend({},baseConfig,config);
+
     // get db from config
     var db = config.db;
     // get mongo collection
     var coll = config.collection;
     
     var CRUD = {
-        getAll: function(request, reply) {    
-            var find = {};
-           
-            // Access Control
-            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin') {
-                var uId = request.auth.artifacts.id;
-                find.uId = uId;
-            }
-            
-            var collection = db
-            .collection(coll)
-            .find(find)
-            .sort({ "_id" : 1})
-            .toArray(function(err, docs) {
-                if (err) throw err;
-                return reply(docs).type('application/json');
-            });
-
-        },
         create: function(request, reply) {
             
             
@@ -87,7 +76,7 @@ module.exports = function(config) {
 
                         // Perform Insert
                         collection.insert(insert, function(err, docs) {
-                            if(err) throw err;
+                           
                             return reply(docs[0]).type('application/json');           
                         });         
                     }
@@ -100,7 +89,7 @@ module.exports = function(config) {
             var collection = db
             .collection(coll)
             .findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
-                if(err) throw err;
+                
                 
                 if(doc == null) {
                     var error = Boom.badRequest('No doc found in '+coll);
@@ -112,10 +101,90 @@ module.exports = function(config) {
                     return reply(error);
                 }
                 else {
+
+                    if(config.read.whitelist || config.read.blacklist) {
+                        
+                        if(config.read.whitelist) {
+                            // Add whitelist fields
+                            var _doc = {};
+                            for(var i = 0; i < config.read.whitelist.length; i++) {
+                                var key = config.read.whitelist[i];
+                                _doc[key] = doc[key];
+                            }
+                            
+                            doc = _doc;
+                        }
+                        if(config.read.blacklist) {
+                            // Remove blacklist fields
+                            for(var i = 0; i < config.read.blacklist.length; i++) {
+                                var key = config.read.blacklist[i];
+                                delete doc[key];
+                            }
+                        }
+                    }
                     return reply(doc).type('application/json');
                 }                    
             });
             
+        },
+        find: function(request, reply) {    
+            var find = {};
+
+            // Add payload to find object
+            if(request.payload) {
+                Extend(find, request.payload);
+            }
+           
+            // Access Control
+            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin') {
+                var uId = request.auth.artifacts.id;
+                find.uId = uId;
+            }
+
+
+            
+            var collection = db
+            .collection(coll)
+            .find(find)
+            .sort({ "_id" : 1})
+            .toArray(function(err, docs) {
+
+                var _docs = [];
+                if(config.read.whitelist || config.read.blacklist) {
+                    
+                    for(var i = 0; i < docs.length; i++) {
+                        var doc = docs[i];
+
+                        if(config.read.whitelist) {
+                            // Add whitelist fields
+                            var _doc = {}
+                            
+                            for(var j = 0; j < config.read.whitelist.length; j++) {
+                                var key = config.read.whitelist[j];
+                                _doc[key] = doc[key];
+                                
+                            }
+                            _docs.push(_doc)
+                        }
+                        if(config.read.blacklist) {
+                            // Remove blacklist fields
+                            
+                            //console.log(config.read.blacklist.length)
+                            for(var j = 0; j < config.read.blacklist.length; j++) {
+                                var key = config.read.blacklist[j];
+                                
+                                delete doc[key];
+                            }
+                            _docs.push(doc)
+                        }                
+                    }
+                    docs = _docs;
+                    
+                }
+                
+                return reply(docs).type('application/json');
+            });
+
         },
         update: function(request, reply) {
             // Resource ID from URL
@@ -157,7 +226,7 @@ module.exports = function(config) {
                         }
                         else {
                             collection.update({"_id": ObjectId(resourceId)}, {$set: update}, {}, function(err, doc) {
-                                if(err) throw err;
+                                
                                 return reply({error:null,message:'Updated successfully'});
                             });
                         }
@@ -180,7 +249,7 @@ module.exports = function(config) {
                 }
                 else {
                     collection.remove( _del, function(err) {
-                        if(err) throw err;
+                       
                         return reply({error:null,message:'Deleted successfully'});          
                     });
                 }
