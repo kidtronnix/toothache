@@ -22,8 +22,8 @@ The below is intended to be added into a hapi plugin. In our example case, we wi
 Configure toothache with desired behaviour... 
 
 ```js
+// User model
 var CRUD = {
-    
     db: db,                 // MongoDB connection
     collection: 'users',    // MongoDB connection
     // Create options
@@ -36,7 +36,9 @@ var CRUD = {
         }),                 // Valid create payload 
         defaults: {         // Default values that will be added at doc creation
             access: 'normal',
-            activated: false
+            activated: false,
+            uId: true       // Field used for access control. This is a special field that when set to true will default to user's id 
+                            // The value comes from, 'request.auth.artifacts.id' ie the id the user authenticates with
         },
         access: "admin"     // Sets which role can create 
     },
@@ -109,7 +111,6 @@ plugin.route({
     }
 });
 
-
 // Update, must use 'id' parameter to refer to mongo's '_id' field
 plugin.route({
     method: 'PUT', path: '/api/user/{id}',
@@ -127,4 +128,29 @@ plugin.route({
 });
 ```
 
+### Access Control
+
+Access control is only added if a route is authenticated. An `access` field must be added to user's credentials at authentication. For example:
+
+```js
+getCredentialsFunc: function (id, callback) {
+    // Core creds
+    var credentials = {
+        user1: {
+            key: 'pass1',
+            access: 'admin',
+            algorithm: 'sha256'
+        },
+        user2: {
+            key: 'pass2',
+            access: 'normal',
+            algorithm: 'sha256'
+        }
+    }
+    return callback(null, credentials[id]);
+}
+```
+
+ - Admin users get access to all resources, they can create, read, update and delete.
+ - Normal users only have access to their own resources, they can only CRUD documents that have a `uId` equal to user's authenitcation id (`request.auth.artifacts.id`)
 
