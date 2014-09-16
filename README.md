@@ -11,7 +11,7 @@ This plugin instantly adds the following functionality to any mongo db...
 
 * Plug 'n' play CRUD Routes
 * Set custom fields to bcrypt and/or timestamp at doc creation, if required
-* Access control of resources. (beta feature)
+* Access control of resources.
 
 ### Usage
 
@@ -23,45 +23,42 @@ Configure toothache with desired behaviour...
 
 ```js
 var CRUD = {
-    // Mongo collection
-    collection: 'users',
+    
+    db: db,                 // MongoDB connection
+    collection: 'users',    // MongoDB connection
     // Create options
     create: {
-        // Sets 'password' field to be bcrypted at doc creation
-        bcrypt: 'password',
-        // Sets 'created' field to be dated at doc creation
-        date: 'created',
-        // Valid create payload 
-        payload: Joi.object().keys({
+        bcrypt: 'password', // Sets 'password' field to be bcrypted at doc creation
+        date: 'created',    // Sets 'created' field to be dated at doc creation
+        payload: Joi.object().keys({ 
             email: Joi.string().required(),
             password: Joi.string().required()
-        }),
-        // Default values that will be added at doc creation
-        defaults: {
+        }),                 // Valid create payload 
+        defaults: {         // Default values that will be added at doc creation
             access: 'normal',
             activated: false
         },
-        // Sets which role can create 
-        access: "admin"
+        access: "admin"     // Sets which role can create 
     },
+    // Read options for get and find
+    read: {
+        whitelist: ['email'],   // Array of fields that will be returned, all other fields will be excluded 
+        blacklist: ['password'] // Array of fields that will be removed, all other fields will be included
+    }
     // Update options
     update: {
-        // Sets 'password' field to be bcrypted at doc creation
-        bcrypt: 'password',
-        // Sets 'updated' field to be dated at doc creation
-        date: 'updated',
-        // Valid create payload 
+        bcrypt: 'password', // Sets 'password' field to be bcrypted at doc update
+        date: 'updated',    // Sets 'updated' field to be dated at doc update
         payload: Joi.object().keys({
             email: Joi.string(),
             password: Joi.string()
-        })
+        }) // Valid update payload 
     },
     // Joi options when validating payloads    
     validationOpts: {
         abortEarly: false
-    },
-    // MongoDB connection
-    db: db
+    }
+    
 };
 
 var User = require('toothache')(CRUD);
@@ -69,7 +66,7 @@ var User = require('toothache')(CRUD);
 
 ##### Add Routes
 
-Once we have configured toothache, we have the following CRUD functions exposed:
+Once we have configured toothache, we have the following CRUD request handlers will be exposed:
 
 * User.create
 * User.get
@@ -88,7 +85,7 @@ plugin.route({
     }
 });
 
-// Get a resource
+// Get a resource, must use 'id' parameter to refer to mongo's '_id' field
 plugin.route({
     method: 'GET', path: '/api/user/{id}',
     config: {
@@ -113,7 +110,7 @@ plugin.route({
 });
 
 
-// Update
+// Update, must use 'id' parameter to refer to mongo's '_id' field
 plugin.route({
     method: 'PUT', path: '/api/user/{id}',
     config: {
@@ -121,7 +118,7 @@ plugin.route({
     }
 });
 
-// Delete
+// Delete, must use 'id' parameter to refer to mongo's '_id' field
 plugin.route({
     method: 'DELETE', path: '/api/user/{id}',
     config: {
