@@ -3,7 +3,7 @@ Toothache
 
 A Hapi plugin that removes the toothache from creating CRUD endpoints for MongoDB.
 
-Current version: **1.0.x** [![Build Status](https://travis-ci.org/smaxwellstewart/toothache.svg?branch=master)](https://travis-ci.org/smaxwellstewart/toothache) [![Coverage Status](https://coveralls.io/repos/smaxwellstewart/toothache/badge.png)](https://coveralls.io/r/smaxwellstewart/toothache)
+Current version: **1.0.x** [![Build Status](https://travis-ci.org/smaxwellstewart/toothache.svg?branch=master)](https://travis-ci.org/smaxwellstewart/toothache) [![Coverage Status](https://img.shields.io/coveralls/smaxwellstewart/toothache.svg)](https://coveralls.io/r/smaxwellstewart/toothache?branch=master)
 
 ### What is this plugin?
 
