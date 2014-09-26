@@ -12,9 +12,12 @@ var CRUD = {
     create: {
         bcrypt: 'password',
         date: 'created',
-        payload: Joi.object().keys({
+        schema: Joi.object().keys({
             email: Joi.string().required(),
-            password: Joi.string().required()
+            password: Joi.string().required(),
+            access: Joi.string().required(),
+            activated: Joi.boolean().required(),
+            created: Joi.any().required(),
         }),
         defaults: {
             access: 'normal',
