@@ -80,6 +80,7 @@ Once we have configured toothache, the following request handlers will be expose
 
 #### `User.create`
  - This handler will insert any supplied `payload` into MongoDB.
+ - Accepted methods: `GET` with `payload` in URL or, `POST` or `PUT` with `payload` in request body.
  - The following toothache `options` will affect this handler:
   - `db` - MongoDB connection object, connection [example](https://gist.github.com/smaxwellstewart/9cf26df20cb58a3f5d02). 
   - 'collection' - the MongoDB collection to create, read, update and delete from.
@@ -91,19 +92,22 @@ Once we have configured toothache, the following request handlers will be expose
   - `create.access` - If set to `admin` only admin users will be able to create a doc. If set to normal, both admin and normal users have create access.
 
 #### `User.get`
- - This handler will return an individual MongoDB document. The handler expects an `id` parameter to be set in route's `path` field.
+ - This handler will return an individual MongoDB document.
+ - Accepted methods: `GET` with an `id` parameter set in route's `path` field.
  - The following toothache `options` will affect this handler:
   - `read.whitelist` - Array of fields that will be returned when doc is fetched.
   - `read.blacklist` - Array of fields that will be excluded when doc is fetched. Not recommened to be set with `read.whitelist`.
   - `read.access` - If set to `admin` only admin users will be able to read a doc. If set to normal, both admin and normal users have read access.
 #### `User.find`
  - This handler will return an array of MongoDB documents. The search will query with a supplied `payload`, if none is supplied will return all docs. For normal users
+ - Accepted methods: `GET` with `payload` in URL or, `POST` or `PUT` with `payload` in request body.
  - The following toothache `options` will affect this handler:
   - `read.whitelist` - Array of fields that will be returned when docs are fetched.
   - `read.blacklist` - Array of fields that will be excluded when docs are fetched. Not recommened to be set with `read.whitelist`.
   - `read.access` - If set to `admin` only admin users will be able to read a doc. If set to normal, both admin and normal users have read
 #### `User.update`
  - This route will update a doc with any supplied `payload`. The handler expects an `id` parameter to be set in route's `path` field.
+ - Accepted methods: `GET` with `payload` in URL or, `POST` or `PUT` with `payload` in request body.
  - The following toothache `options` will affect this handler:
   - `update.payload` - [Joi](https://github.com/hapijs/joi) object payload is validated against.
   e.g. supplied payload will join and override this default object.
@@ -112,7 +116,8 @@ Once we have configured toothache, the following request handlers will be expose
   - `update.access` - If set to `admin` only admin users will be able to update a doc. If set to normal, both admin and normal users have update access. 
 
 #### `User.del`
- - This route will delete a doc with any supplied `payload`. The handler expects an `id` parameter to be set in route's `path` field.
+ - This route will delete a doc with any supplied `payload`.
+ - Accepted methods: `GET` with an `id` parameter set in route's `path` field.
  - The following toothache `options` will affect this handler:
   - `delete.access` - If set to `admin` only admin users will be able to delete a doc. If set to normal, both admin and normal users have delete access. 
 

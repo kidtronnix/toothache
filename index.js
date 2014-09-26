@@ -50,10 +50,14 @@ module.exports = function(config) {
             else {
                 var validSchema = config.create.payload;
 
-                // console.log(JSON.stringify(request.payload, null, 4))
+                if(request.method === 'get') {
+                    var payload = request.query;
+                } else {
+                    var payload = request.payload;
+                }
                 // First validate schema
                 // respond with errors 
-                Joi.validate(request.payload, validSchema, config.validationOpts, function (err, value) {
+                Joi.validate(payload, validSchema, config.validationOpts, function (err, value) {
                     if(err) {
                         var error = Boom.badRequest(err);
                         return reply(error);   
@@ -61,7 +65,7 @@ module.exports = function(config) {
                     else {
                         
                         // Add our defaults
-                        var insert = Extend({},config.create.defaults, request.payload);
+                        var insert = Extend({},config.create.defaults, payload);
 
                         // If config has date option, add a timestamp
                         if(config.create.date) {
@@ -152,9 +156,15 @@ module.exports = function(config) {
             else {
                 var find = {};
 
+                if(request.method === 'get') {
+                    var payload = request.query;
+                } else {
+                    var payload = request.payload;
+                }
+
                 // Add payload to find object
                 if(request.payload) {
-                    Extend(find, request.payload);
+                    Extend(find, payload);
                 }
                
                 // Access Control
@@ -212,6 +222,7 @@ module.exports = function(config) {
             }
 
 
+
         },
         update: function(request, reply) {
             if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.create.access) {
@@ -223,13 +234,19 @@ module.exports = function(config) {
                 var resourceId = request.params.id;
                 var validSchema = config.update.payload;
 
-                Joi.validate(request.payload, validSchema, config.validationOpts, function (err, value) {
+                if(request.method === 'get') {
+                    var payload = request.query;
+                } else {
+                    var payload = request.payload;
+                }
+
+                Joi.validate(payload, validSchema, config.validationOpts, function (err, value) {
                     if(err !== null) {
                         var error = Boom.badRequest(err);
                         return reply(error);
                     }
                     else {
-                        var update = request.payload;
+                        var update = payload;
 
                         if(config.update.bcrypt && update[config.update.bcrypt]) {
                             // Hash password before update
