@@ -78,7 +78,7 @@ var User = require('toothache')(CRUD);
 
 Once we have configured toothache, the following request handlers will be exposed:
 
-#### `User.create`
+#### `.create`
  - This handler will insert any supplied `payload` into MongoDB.
  - Accepted methods: `GET` with `payload` in URL or, `POST` or `PUT` with `payload` in request body.
  - The following toothache `options` will affect this handler:
@@ -91,21 +91,23 @@ Once we have configured toothache, the following request handlers will be expose
   - `create.date` - Will add a javasctipt `new Date()` timestamp to field name at doc creation.
   - `create.access` - If set to `admin` only admin users will be able to create a doc. If set to normal, both admin and normal users have create access.
 
-#### `User.get`
+#### `.get`
  - This handler will return an individual MongoDB document.
  - Accepted methods: `GET` with an `id` parameter set in route's `path` field.
  - The following toothache `options` will affect this handler:
   - `read.whitelist` - Array of fields that will be returned when doc is fetched.
   - `read.blacklist` - Array of fields that will be excluded when doc is fetched. Not recommened to be set with `read.whitelist`.
   - `read.access` - If set to `admin` only admin users will be able to read a doc. If set to normal, both admin and normal users have read access.
-#### `User.find`
+
+#### `.find`
  - This handler will return an array of MongoDB documents. The search will query with a supplied `payload`, if none is supplied will return all docs. For normal users
  - Accepted methods: `GET` with `payload` in URL or, `POST` or `PUT` with `payload` in request body.
  - The following toothache `options` will affect this handler:
   - `read.whitelist` - Array of fields that will be returned when docs are fetched.
   - `read.blacklist` - Array of fields that will be excluded when docs are fetched. Not recommened to be set with `read.whitelist`.
-  - `read.access` - If set to `admin` only admin users will be able to read a doc. If set to normal, both admin and normal users have read
-#### `User.update`
+  - `read.access` - If set to `admin` only admin users will be able to read a doc. If set to normal, both admin and normal users have read access.
+
+#### `.update`
  - This route will update a doc with any supplied `payload`. The handler expects an `id` parameter to be set in route's `path` field.
  - Accepted methods: `GET` with `payload` in URL or, `POST` or `PUT` with `payload` in request body.
  - The following toothache `options` will affect this handler:
@@ -115,7 +117,7 @@ Once we have configured toothache, the following request handlers will be expose
   - `update.date` - Will add a javasctipt `new Date()` timestamp to field name when doc is updated.
   - `update.access` - If set to `admin` only admin users will be able to update a doc. If set to normal, both admin and normal users have update access. 
 
-#### `User.del`
+#### `.del`
  - This route will delete a doc with any supplied `payload`.
  - Accepted methods: `GET` with an `id` parameter set in route's `path` field.
  - The following toothache `options` will affect this handler:
@@ -128,7 +130,7 @@ These can be used in a Hapi plugin like this...
 ```js
 // Create
 plugin.route({
-    method: 'POST', path: '/api/user',
+    method: 'POST', path: '/user',
     config: {
         handler: User.create
     }
