@@ -4,7 +4,7 @@
   "description": "Hapi plugin that removes the toothache from creating CRUD endpoints for MongoDB.",
   "main": "index.js",
   "scripts": {
-    "test": "make test-lcov"
+    "test": "make test-cov-html"
   },
   "repository": {
     "type": "git",

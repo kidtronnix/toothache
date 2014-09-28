@@ -44,7 +44,8 @@ var CRUD = {
     update: {
         payload: Joi.object().keys({
             field: Joi.string()
-        })
+        }),
+        access: 'normal'
     },    
     validationOpts: {
         abortEarly: false
@@ -220,7 +221,7 @@ describe("Toothache", function() {
             
             expect(response.statusCode).to.equal(401);
             expect(result).to.be.instanceof(Object);
-            expect(result.message).to.equal("You are not permitted to insert into resources1");
+            expect(result.message).to.equal("You do not have create access");
             
             done();
         });
@@ -519,6 +520,150 @@ describe("Toothache", function() {
         });
     });
 
+    it("non-admin can't get admin protected resource", function(done) {
+        CRUD.read = {
+            access: 'admin'
+        }
+        var Resource = require('../')(CRUD);
+         // Create
+        server.route({
+            method: 'GET', path: '/resource/{id}',
+            config: {
+                auth: 'web',
+                handler: Resource.get
+            }
+        });
+
+        var options = {
+            method: "GET",
+            url: "http://localhost.com/resource/1",
+            headers: {}
+        };
+
+        
+        // Add auth
+        var header = Hawk.client.header(options.url, options.method, { credentials: credentials.normal });
+        options.headers.Authorization = header.field;
+
+        server.inject(options, function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(401);
+            expect(result).to.be.instanceof(Object);
+            expect(result.message).to.equal("You do not have read access");
+            
+            done();
+        });
+    })
+
+    it("non-admin can't find admin protected resource", function(done) {
+        CRUD.read = {
+            access: 'admin'
+        }
+        var Resource = require('../')(CRUD);
+         // Create
+        server.route({
+            method: 'POST', path: '/resource/find',
+            config: {
+                auth: 'web',
+                handler: Resource.find
+            }
+        });
+
+        var options = {
+            method: "POST",
+            url: "http://localhost.com/resource/find",
+            headers: {}
+        };
+
+        
+        // Add auth
+        var header = Hawk.client.header(options.url, options.method, { credentials: credentials.normal });
+        options.headers.Authorization = header.field;
+
+        server.inject(options, function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(401);
+            expect(result).to.be.instanceof(Object);
+            expect(result.message).to.equal("You do not have read access");
+            
+            done();
+        });
+    })
+    
+    it("non-admin can't update admin protected resource", function(done) {
+        CRUD.update = {
+            access: 'admin'
+        }
+        var Resource = require('../')(CRUD);
+         // Create
+        server.route({
+            method: 'PUT', path: '/resource/{id}',
+            config: {
+                auth: 'web',
+                handler: Resource.update
+            }
+        });
+
+        var options = {
+            method: "PUT",
+            url: "http://localhost.com/resource/1",
+            payload: JSON.stringify({uId:'user2'}),
+            headers: {}
+        };
+
+        
+        // Add auth
+        var header = Hawk.client.header(options.url, options.method, { credentials: credentials.normal });
+        options.headers.Authorization = header.field;
+
+        server.inject(options, function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(401);
+            expect(result).to.be.instanceof(Object);
+            expect(result.message).to.equal("You do not have update access");
+            
+            done();
+        });
+    })
+
+    it("non-admin can't delete admin protected resource", function(done) {
+        CRUD.del = {
+            access: 'admin'
+        }
+        var Resource = require('../')(CRUD);
+         // Create
+        server.route({
+            method: 'DELETE', path: '/resource/{id}',
+            config: {
+                auth: 'web',
+                handler: Resource.del
+            }
+        });
+
+        var options = {
+            method: "DELETE",
+            url: "http://localhost.com/resource/1",
+            headers: {}
+        };
+
+        
+        // Add auth
+        var header = Hawk.client.header(options.url, options.method, { credentials: credentials.normal });
+        options.headers.Authorization = header.field;
+
+        server.inject(options, function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(401);
+            expect(result).to.be.instanceof(Object);
+            expect(result.message).to.equal("You do not have delete access");
+            
+            done();
+        });
+    })
     
 
 });

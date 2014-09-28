@@ -119,7 +119,7 @@ Once we have configured toothache, the following request handlers will be expose
 
 #### `.del`
  - This route will delete a doc with any supplied `payload`.
- - Accepted methods: `GET` with an `id` parameter set in route's `path` field.
+ - Accepted methods: `DELETE` with an `id` parameter set in route's `path` field.
  - The following toothache `options` will affect this handler:
   - `delete.access` - If set to `admin` only admin users will be able to delete a doc. If set to normal, both admin and normal users have delete access. 
 

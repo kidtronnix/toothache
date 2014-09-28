@@ -4,7 +4,8 @@ var Lab = require("lab"),
 	MongoDB = require('mongodb').Db,
 	Server = require('mongodb').Server,
 	ObjectId = require('mongodb').ObjectID,
-    Bcrypt = require('bcryptjs');
+    Bcrypt = require('bcryptjs'),
+    qs = require("querystring");
 
 // Internal config stuff
 var CRUD = {
@@ -12,12 +13,9 @@ var CRUD = {
     create: {
         bcrypt: 'password',
         date: 'created',
-        schema: Joi.object().keys({
+        payload: Joi.object().keys({
             email: Joi.string().required(),
-            password: Joi.string().required(),
-            access: Joi.string().required(),
-            activated: Joi.boolean().required(),
-            created: Joi.any().required(),
+            password: Joi.string().required()
         }),
         defaults: {
             access: 'normal',
@@ -75,6 +73,13 @@ describe("Toothache", function() {
                 }
             });
 
+            server.route({
+                method: 'GET', path: '/api/resource/create',
+                config: {
+                    handler: Resource.create
+                }
+            });
+
             // Get a resource
             server.route({
                 method: 'GET', path: '/api/resource/{id}',
@@ -99,6 +104,13 @@ describe("Toothache", function() {
                 }
             });
 
+            server.route({
+                method: 'GET', path: '/api/resource/{id}/update',
+                config: {
+                    handler: Resource.update
+                }
+            });
+
             // Delete
             server.route({
                 method: 'DELETE', path: '/api/resource/{id}',
@@ -112,7 +124,7 @@ describe("Toothache", function() {
         })
     }); // Done with before
 
-    it("creates a resource", function(done) {
+    it("creates a resource from POST", function(done) {
         var payload = {
             email: "test@test.com",
             password: "newpass"
@@ -121,6 +133,34 @@ describe("Toothache", function() {
         var options = {
             method: "POST",
             url: "/api/resource",
+            payload: JSON.stringify(payload)
+        };
+
+        server.inject(options, function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(200);
+            expect(result).to.be.instanceof(Object);
+            expect(result.access).to.equal('normal');
+            expect(result.activated).to.equal(false);
+            expect(result.created).to.be.instanceof(Date);
+            // Test password was bcrypted correctly
+            var validPass = Bcrypt.compareSync(payload.password, result.password);
+            expect(validPass).to.equal(true);
+
+            done();
+        });
+    })
+
+    it("creates a resource from GET", function(done) {
+        var payload = {
+            email: "test3@test.com",
+            password: "newpass3"
+        };
+
+        var options = {
+            method: "GET",
+            url: "/api/resource/create?"+qs.stringify(payload),
             payload: JSON.stringify(payload)
         };
 
@@ -168,7 +208,7 @@ describe("Toothache", function() {
         });
     });
 
-    it("update a resource", function(done) {
+    it("update a resource from POST", function(done) {
         // Get all resources
         server.inject("/api/resource", function(response) {
             var result = response.result;
@@ -180,6 +220,45 @@ describe("Toothache", function() {
             var options = {
                 method: "PUT",
                 url: "/api/resource/"+result[0]._id,
+                payload: JSON.stringify(payload)
+            };
+            // Update resource
+            server.inject(options, function(response) {
+                var result = response.result;
+
+                expect(response.statusCode).to.equal(200);
+                expect(result).to.be.instanceof(Object);
+                expect(result.message).to.equal('Updated successfully');
+
+                // Get updated resource
+                server.inject(options.url, function(response) {
+                    var result = response.result;
+
+                    expect(result.email).to.equal(payload.email);
+                    expect(result.updated).to.be.instanceof(Date);
+                    
+                    // Test password was bcrypted correctly
+                    var validPass = Bcrypt.compareSync(payload.password, result.password);
+                    expect(validPass).to.equal(true);
+
+                    done();
+                })           
+            });
+        });
+    });
+
+    it("update a resource from GET", function(done) {
+        // Get all resources
+        server.inject("/api/resource", function(response) {
+            var result = response.result;
+            var payload = {
+                email: "test2@test.com",
+                password: "newpass2"
+            };
+
+            var options = {
+                method: "GET",
+                url: "/api/resource/"+result[0]._id+"/update?"+qs.stringify(payload),
                 payload: JSON.stringify(payload)
             };
             // Update resource
@@ -293,6 +372,34 @@ describe("Toothache", function() {
         });
     })
 
+    it("whitelist filters fields for multiple docs", function(done) {
+        CRUD.read = {
+            whitelist: ['_id','email','boom']
+        };
+
+        var Resource = require('../')(CRUD);
+
+        // Get All
+        server.route({
+            method: 'GET', path: '/api/resource/whitelist2',
+            config: {
+                handler: Resource.find
+            }
+        });
+
+        server.inject('/api/resource/whitelist2', function(response) {
+            var result = response.result;
+            
+            expect(response.statusCode).to.equal(200);
+            expect(result[0]).to.be.instanceof(Object);
+            expect(typeof result[0].email).to.equal('string');
+            expect(result[0].password).to.not.exist;
+            expect(result[0].boom).to.not.exist;
+
+            done();
+        });
+    })
+
     it("whitelist filters fields for ind doc", function(done) {
         CRUD.read = {
             whitelist: ['_id','email']
@@ -319,6 +426,39 @@ describe("Toothache", function() {
                 expect(typeof result.email).to.equal('string');
                 expect(result.password).to.not.exist;
                 
+                done();
+            })
+            
+        });
+    });
+
+    it("whitelist doesn't add undefined fields for ind doc", function(done) {
+        CRUD.read = {
+            whitelist: ['_id','email','boom']
+        };
+
+        var Resource = require('../')(CRUD);
+
+        // Get All
+        server.route({
+            method: 'GET', path: '/api/resource/{id}/wlist',
+            config: {
+                handler: Resource.get
+            }
+        });
+
+        server.inject('/api/resource', function(response) {
+            var id = response.result[0]['_id'];
+            
+            server.inject('/api/resource/'+id+'/wlist', function(response) {
+                var result = response.result;
+                
+                expect(response.statusCode).to.equal(200);
+                expect(result).to.be.instanceof(Object);
+                expect(typeof result.email).to.equal('string');
+                expect(result.password).to.not.exist;
+                expect(result.boom).to.not.exist;
+
                 done();
             })
             

@@ -31,6 +31,7 @@ module.exports = function(config) {
 
     config = Extend({},baseConfig,config);
 
+
     // get db from config
     var db = config.db;
     // get mongo collection
@@ -55,6 +56,7 @@ module.exports = function(config) {
                 } else {
                     var payload = request.payload;
                 }
+                
                 // First validate schema
                 // respond with errors 
                 Joi.validate(payload, validSchema, config.validationOpts, function (err, value) {
@@ -98,7 +100,7 @@ module.exports = function(config) {
         },
         get: function(request, reply) {
             
-            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.create.access) {
+            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.read.access) {
                 var error = Boom.unauthorized('You do not have read access');
                 return reply(error);
             }
@@ -149,7 +151,8 @@ module.exports = function(config) {
             
         },
         find: function(request, reply) {
-            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.create.access) {
+            // console.log(config.read.access)
+            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.read.access) {
                 var error = Boom.unauthorized('You do not have read access');
                 return reply(error);
             }
@@ -193,7 +196,7 @@ module.exports = function(config) {
                                 
                                 for(var j = 0; j < config.read.whitelist.length; j++) {
                                     var key = config.read.whitelist[j];
-                                    if(doc[key !== undefined) {
+                                    if(doc[key] !== undefined) {
                                         _doc[key] = doc[key];
                                     }
                                     
@@ -225,8 +228,10 @@ module.exports = function(config) {
 
         },
         update: function(request, reply) {
-            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.create.access) {
+            // console.log(config.update.access)
+            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.update.access) {
                 var error = Boom.unauthorized('You do not have update access');
+                
                 return reply(error);
             }
             else {
@@ -286,7 +291,7 @@ module.exports = function(config) {
             
         },
         del: function(request, reply) {
-            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.create.access) {
+            if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.del.access) {
                 var error = Boom.unauthorized('You do not have delete access');
                 return reply(error);
             } else {
