@@ -1,6 +1,6 @@
 {
   "name": "toothache",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Hapi plugin that removes the toothache from creating CRUD endpoints for MongoDB.",
   "main": "index.js",
   "scripts": {
