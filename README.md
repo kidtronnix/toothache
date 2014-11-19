@@ -48,7 +48,7 @@ var CRUD = {
         whitelist: ['email'],   // Array of fields that will be returned, all other fields will be excluded 
         blacklist: ['password'], // Array of fields that will be removed, all other fields will be included
         access: 'normal'        // Sets which role can read 
-    }
+    },
     // Update options
     update: {
         // Valid update payload
