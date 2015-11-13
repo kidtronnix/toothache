@@ -3,7 +3,7 @@ Toothache
 
 A Hapi plugin that removes the toothache from creating CRUD endpoints for MongoDB.
 
-Current version: **1.1.x** [![Build Status](https://travis-ci.org/smaxwellstewart/toothache.svg?branch=master)](https://travis-ci.org/smaxwellstewart/toothache) [![Coverage Status](https://img.shields.io/coveralls/smaxwellstewart/toothache.svg)](https://coveralls.io/r/smaxwellstewart/toothache?branch=master)
+Current version: **2.0.x** [![Build Status](https://travis-ci.org/smaxwellstewart/toothache.svg?branch=master)](https://travis-ci.org/smaxwellstewart/toothache) [![Coverage Status](https://img.shields.io/coveralls/smaxwellstewart/toothache.svg)](https://coveralls.io/r/smaxwellstewart/toothache?branch=master)
 
 ## What is this plugin?
 
@@ -19,7 +19,7 @@ The below is intended to be added into a hapi plugin. In our example case, we wi
 
 ### Configure
 
-Configure toothache with desired behaviour... 
+Configure toothache with desired behaviour...
 
 ```js
 // User model
@@ -28,26 +28,26 @@ var CRUD = {
     collection: 'users',    // MongoDB collection
     // Create options
     create: {
-        // Valid create payload 
-        payload: Joi.object().keys({ 
+        // Valid create payload
+        payload: Joi.object().keys({
             email: Joi.string().required(),
             password: Joi.string().required()
         }),                 
         defaults: {         // Default values that will be added at doc creation
             access: 'normal',
             activated: false,
-            uId: true       // Field used for access control. This is a special field that when set to true will default to user's id 
+            uId: true       // Field used for access control. This is a special field that when set to true will default to user's id
                             // The value comes from, 'request.auth.artifacts.id' ie the id the user authenticates with
         },
         bcrypt: 'password', // Sets 'password' field to be bcrypted at doc creation
         date: 'created',    // Sets 'created' field to be dated at doc creation
-        access: "admin"     // Sets which role can create 
+        access: "admin"     // Sets which role can create
     },
     // Read options for get and find
     read: {
-        whitelist: ['email'],   // Array of fields that will be returned, all other fields will be excluded 
+        whitelist: ['email'],   // Array of fields that will be returned, all other fields will be excluded
         blacklist: ['password'], // Array of fields that will be removed, all other fields will be included
-        access: 'normal'        // Sets which role can read 
+        access: 'normal'        // Sets which role can read
     },
     // Update options
     update: {
@@ -55,20 +55,20 @@ var CRUD = {
         payload: Joi.object().keys({
             email: Joi.string(),
             password: Joi.string()
-        }), 
+        }),
         bcrypt: 'password', // Sets 'password' field to be bcrypted at doc update
         date: 'updated',    // Sets 'updated' field to be dated at doc update
         access: 'normal' // Sets which role can update  
     },
     // Delete options
     del: {
-        access: 'normal' // Sets which role can update 
+        access: 'normal' // Sets which role can update
     },
     // Joi options when validating payloads    
     validationOpts: {
         abortEarly: false
     }
-    
+
 };
 
 var User = require('toothache')(CRUD);
@@ -82,10 +82,10 @@ Once we have configured toothache, the following request handlers will be expose
  - This handler will insert any supplied `payload` into MongoDB.
  - Accepted methods: `GET` with `payload` in URL or, `POST` or `PUT` with `payload` in request body.
  - The following toothache `options` will affect this handler:
-  - `db` - MongoDB connection object, connection [example](https://gist.github.com/smaxwellstewart/9cf26df20cb58a3f5d02). 
+  - `db` - MongoDB connection object, connection [example](https://gist.github.com/smaxwellstewart/9cf26df20cb58a3f5d02).
   - 'collection' - the MongoDB collection to create, read, update and delete from.
   - `create.payload` - [Joi](https://github.com/hapijs/joi) object payload is validated against.
-  - `create.defaults` - Object of default fields, the payload will extend this object before insertion, 
+  - `create.defaults` - Object of default fields, the payload will extend this object before insertion,
   e.g. supplied payload will join and override this default object.
   - `create.bcrypt` - Field name of `payload` field to be bcrypted before doc creation.
   - `create.date` - Will add a javasctipt `new Date()` timestamp to field name at doc creation.
@@ -115,13 +115,13 @@ Once we have configured toothache, the following request handlers will be expose
   e.g. supplied payload will join and override this default object.
   - `update.bcrypt` - Field name of `payload` field to be bcrypted when doc is updated.
   - `update.date` - Will add a javasctipt `new Date()` timestamp to field name when doc is updated.
-  - `update.access` - If set to `admin` only admin users will be able to update a doc. If set to normal, both admin and normal users have update access. 
+  - `update.access` - If set to `admin` only admin users will be able to update a doc. If set to normal, both admin and normal users have update access.
 
 #### `.del`
  - This route will delete a doc with any supplied `payload`.
  - Accepted methods: `DELETE` with an `id` parameter set in route's `path` field.
  - The following toothache `options` will affect this handler:
-  - `del.access` - If set to `admin` only admin users will be able to delete a doc. If set to normal, both admin and normal users have delete access. 
+  - `del.access` - If set to `admin` only admin users will be able to delete a doc. If set to normal, both admin and normal users have delete access.
 
 *Example*
 
@@ -207,4 +207,3 @@ getCredentialsFunc: function (id, callback) {
 
  - Admin users get access to all resources, they can create, read, update and delete.
  - Normal users only have access to their own resources, they can only CRUD documents that have a `uId` equal to user's authenitcation id (`request.auth.artifacts.id`)
-

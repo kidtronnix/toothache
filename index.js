@@ -36,11 +36,11 @@ module.exports = function(config) {
     var db = config.db;
     // get mongo collection
     var coll = config.collection;
-    
+
     var CRUD = {
         create: function(request, reply) {
-            
-            
+
+
             // add access control
             // We need to stop create if not allowed, only if:
             // route is authenticated, we are not admin, and we protect create
@@ -56,16 +56,16 @@ module.exports = function(config) {
                 } else {
                     var payload = request.payload;
                 }
-                
+
                 // First validate schema
-                // respond with errors 
+                // respond with errors
                 Joi.validate(payload, validSchema, config.validationOpts, function (err, value) {
                     if(err) {
                         var error = Boom.badRequest(err);
-                        return reply(error);   
+                        return reply(error);
                     }
                     else {
-                        
+
                         // Add our defaults
                         var insert = Extend({},config.create.defaults, payload);
 
@@ -79,7 +79,7 @@ module.exports = function(config) {
                             // Hash password before insert
                             insert[config.create.bcrypt] = Bcrypt.hashSync(insert[config.create.bcrypt], salt);
                         }
-                        
+
 
                         // Add uId if set to anything in defaults
                         if(request.auth.isAuthenticated && config.create.defaults["uId"] !== undefined) {
@@ -91,15 +91,15 @@ module.exports = function(config) {
 
                         // Perform Insert
                         collection.insert(insert, function(err, docs) {
-                           
-                            return reply(docs[0]).type('application/json');           
-                        });         
+
+                            return reply(docs.ops[0]).type('application/json');           
+                        });
                     }
-                }); 
-            }   
+                });
+            }
         },
         get: function(request, reply) {
-            
+
             if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.read.access) {
                 var error = Boom.unauthorized('You do not have read access');
                 return reply(error);
@@ -108,8 +108,8 @@ module.exports = function(config) {
                 var collection = db
                 .collection(coll)
                 .findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
-                    
-                    
+
+
                     if(doc == null) {
                         var error = Boom.badRequest('No doc found in '+coll);
                         return reply(error);
@@ -122,7 +122,7 @@ module.exports = function(config) {
                     else {
 
                         if(config.read.whitelist || config.read.blacklist) {
-                            
+
                             if(config.read.whitelist) {
                                 // Add whitelist fields
                                 var _doc = {};
@@ -132,7 +132,7 @@ module.exports = function(config) {
                                         _doc[key] = doc[key];
                                     }
                                 }
-                                
+
                                 doc = _doc;
                             }
                             if(config.read.blacklist) {
@@ -144,11 +144,11 @@ module.exports = function(config) {
                             }
                         }
                         return reply(doc).type('application/json');
-                    }                    
+                    }
                 });
             }
-            
-            
+
+
         },
         find: function(request, reply) {
             // console.log(config.read.access)
@@ -169,7 +169,7 @@ module.exports = function(config) {
                 if(request.payload) {
                     Extend(find, payload);
                 }
-               
+
                 // Access Control
                 if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin') {
                     var uId = request.auth.artifacts.id;
@@ -177,7 +177,7 @@ module.exports = function(config) {
                 }
 
 
-                
+
                 var collection = db
                 .collection(coll)
                 .find(find)
@@ -186,40 +186,40 @@ module.exports = function(config) {
 
                     var _docs = [];
                     if(config.read.whitelist || config.read.blacklist) {
-                        
+
                         for(var i = 0; i < docs.length; i++) {
                             var doc = docs[i];
 
                             if(config.read.whitelist) {
                                 // Add whitelist fields
                                 var _doc = {}
-                                
+
                                 for(var j = 0; j < config.read.whitelist.length; j++) {
                                     var key = config.read.whitelist[j];
                                     if(doc[key] !== undefined) {
                                         _doc[key] = doc[key];
                                     }
-                                    
-                                    
+
+
                                 }
                                 _docs.push(_doc)
                             }
                             if(config.read.blacklist) {
                                 // Remove blacklist fields
-                                
+
                                 //console.log(config.read.blacklist.length)
                                 for(var j = 0; j < config.read.blacklist.length; j++) {
                                     var key = config.read.blacklist[j];
-                                    
+
                                     delete doc[key];
                                 }
                                 _docs.push(doc)
-                            }                
+                            }
                         }
                         docs = _docs;
-                        
+
                     }
-                    
+
                     return reply(docs).type('application/json');
                 });
             }
@@ -231,7 +231,7 @@ module.exports = function(config) {
             // console.log(config.update.access)
             if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.update.access) {
                 var error = Boom.unauthorized('You do not have update access');
-                
+
                 return reply(error);
             }
             else {
@@ -272,7 +272,7 @@ module.exports = function(config) {
                             if(doc === null) {
                                 var error = Boom.badRequest('No doc found in '+coll);
                                 return reply(error);
-                            } 
+                            }
                             // access control
                             else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId !== request.auth.artifacts.id) {
                                 var error = Boom.unauthorized('You are not permitted to update this');
@@ -280,15 +280,15 @@ module.exports = function(config) {
                             }
                             else {
                                 collection.update({"_id": ObjectId(resourceId)}, {$set: update}, {}, function(err, doc) {
-                                    
+
                                     return reply({error:null,message:'Updated successfully'});
                                 });
                             }
                         })
-                    }   
-                }); 
+                    }
+                });
             }
-            
+
         },
         del: function(request, reply) {
             if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && request.auth.credentials.access !== config.del.access) {
@@ -309,12 +309,12 @@ module.exports = function(config) {
                     }
                     else {
                         collection.remove( _del, function(err) {
-                           
-                            return reply({error:null,message:'Deleted successfully'});          
+
+                            return reply({error:null,message:'Deleted successfully'});
                         });
                     }
                 });
-            }        
+            }
         }
     };
     return CRUD;
