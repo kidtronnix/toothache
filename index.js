@@ -113,7 +113,7 @@ module.exports = function(config) {
                         return reply(error);
                     }
                     // access control
-                    else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc._id.toString() !== request.auth.credentials.id.toString()) {
+                    else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc._id != request.auth.credentials.id) {
                         var error = Boom.unauthorized('You are not permitted to see this');
                         return reply(error);
                     }
@@ -272,7 +272,7 @@ module.exports = function(config) {
                                 return reply(error);
                             }
                             // access control
-                            else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc._id.toString() !== request.auth.credentials.id.toString()) {
+                            else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc._id != request.auth.credentials.id) {
                                 var error = Boom.unauthorized('You are not permitted to update this');
                                 return reply(error);
                             }
@@ -301,7 +301,7 @@ module.exports = function(config) {
                         var error = Boom.badRequest('No doc found in '+coll);
                         return reply(error);
                     }
-                    else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc._id.toString() !== request.auth.credentials.id.toString()) {
+                    else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc._id != request.auth.credentials.id) {
                         var error = Boom.unauthorized('You are not permitted to delete this');
                         return reply(error);
                     }
