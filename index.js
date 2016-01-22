@@ -83,7 +83,7 @@ module.exports = function(config) {
 
                         // Add uId if set to anything in defaults
                         if(request.auth.isAuthenticated && config.create.defaults["uId"] !== undefined) {
-                            insert.uId = request.auth.artifacts.id;
+                            insert.uId = request.auth.credentials.id;
                         }
 
                         // Connect to mongo
@@ -92,7 +92,7 @@ module.exports = function(config) {
                         // Perform Insert
                         collection.insert(insert, function(err, docs) {
 
-                            return reply(docs.ops[0]).type('application/json');           
+                            return reply(docs[0]).type('application/json');
                         });
                     }
                 });
@@ -108,14 +108,12 @@ module.exports = function(config) {
                 var collection = db
                 .collection(coll)
                 .findOne({"_id": ObjectId(request.params.id)}, function(err, doc) {
-
-
-                    if(doc == null) {
+                    if(doc === null) {
                         var error = Boom.badRequest('No doc found in '+coll);
                         return reply(error);
                     }
                     // access control
-                    else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId !== request.auth.artifacts.id) {
+                    else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc._id != request.auth.credentials.id) {
                         var error = Boom.unauthorized('You are not permitted to see this');
                         return reply(error);
                     }
@@ -172,7 +170,7 @@ module.exports = function(config) {
 
                 // Access Control
                 if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin') {
-                    var uId = request.auth.artifacts.id;
+                    var uId = request.auth.credentials.id;
                     find.uId = uId;
                 }
 
@@ -192,7 +190,7 @@ module.exports = function(config) {
 
                             if(config.read.whitelist) {
                                 // Add whitelist fields
-                                var _doc = {}
+                                var _doc = {};
 
                                 for(var j = 0; j < config.read.whitelist.length; j++) {
                                     var key = config.read.whitelist[j];
@@ -202,7 +200,7 @@ module.exports = function(config) {
 
 
                                 }
-                                _docs.push(_doc)
+                                _docs.push(_doc);
                             }
                             if(config.read.blacklist) {
                                 // Remove blacklist fields
@@ -213,7 +211,7 @@ module.exports = function(config) {
 
                                     delete doc[key];
                                 }
-                                _docs.push(doc)
+                                _docs.push(doc);
                             }
                         }
                         docs = _docs;
@@ -274,7 +272,7 @@ module.exports = function(config) {
                                 return reply(error);
                             }
                             // access control
-                            else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId !== request.auth.artifacts.id) {
+                            else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc._id != request.auth.credentials.id) {
                                 var error = Boom.unauthorized('You are not permitted to update this');
                                 return reply(error);
                             }
@@ -284,7 +282,7 @@ module.exports = function(config) {
                                     return reply({error:null,message:'Updated successfully'});
                                 });
                             }
-                        })
+                        });
                     }
                 });
             }
@@ -303,7 +301,7 @@ module.exports = function(config) {
                         var error = Boom.badRequest('No doc found in '+coll);
                         return reply(error);
                     }
-                    else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc.uId !== request.auth.artifacts.id) {
+                    else if(request.auth.isAuthenticated && request.auth.credentials.access !== 'admin' && doc._id != request.auth.credentials.id) {
                         var error = Boom.unauthorized('You are not permitted to delete this');
                         return reply(error);
                     }
@@ -318,4 +316,4 @@ module.exports = function(config) {
         }
     };
     return CRUD;
-}
+};
